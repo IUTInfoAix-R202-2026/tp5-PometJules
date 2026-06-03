@@ -72,12 +72,18 @@ public class SiteDao {
         "INSERT INTO site (numero_carre, nom_convivial, protocole, commentaire, date_creation)"
             + " VALUES (?, ?, ?, ?, ?)";
 
-    // TODO exercice 4 : insérer le site.
-    //
-    // - ouvrir une connexion + préparer la requête ;
-    // - lier les 5 paramètres dans l'ordre des colonnes (setString) ;
-    // - exécuter avec executeUpdate() ;
-    // - envelopper toute SQLException dans une DataAccessException.
+    try (Connection connexion = source.getConnection();
+        PreparedStatement ps = connexion.prepareStatement(sql)) {
+      // Les 5 ? liés dans l'ordre EXACT des colonnes du INSERT.
+      ps.setString(1, site.numeroCarre());
+      ps.setString(2, site.nomConvivial());
+      ps.setString(3, site.protocole());
+      ps.setString(4, site.commentaire());
+      ps.setString(5, site.dateCreation());
+      ps.executeUpdate(); // écriture : on n'attend pas de ResultSet
+    } catch (SQLException e) {
+      throw new DataAccessException("Impossible d'insérer le site " + site.numeroCarre(), e);
+    }
   }
 
   /** Met à jour les champs d'un site existant (identifié par son numéro de carré). */
@@ -86,15 +92,32 @@ public class SiteDao {
         "UPDATE site SET nom_convivial = ?, protocole = ?, commentaire = ?, date_creation = ?"
             + " WHERE numero_carre = ?";
 
-    // TODO exercice 4 : mettre à jour le site (mêmes étapes, executeUpdate).
-    // Attention à l'ordre des paramètres : le numero_carre est le DERNIER (clause WHERE).
+    try (Connection connexion = source.getConnection();
+        PreparedStatement ps = connexion.prepareStatement(sql)) {
+      // D'abord les 4 colonnes du SET...
+      ps.setString(1, site.nomConvivial());
+      ps.setString(2, site.protocole());
+      ps.setString(3, site.commentaire());
+      ps.setString(4, site.dateCreation());
+      // ...puis le critère du WHERE EN DERNIER (5e ?).
+      ps.setString(5, site.numeroCarre());
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new DataAccessException("Impossible de mettre à jour le site " + site.numeroCarre(), e);
+    }
   }
 
   /** Supprime le site identifié par son numéro de carré. */
   public void delete(String numeroCarre) {
     String sql = "DELETE FROM site WHERE numero_carre = ?";
 
-    // TODO exercice 4 : supprimer le site (PreparedStatement + executeUpdate).
+    try (Connection connexion = source.getConnection();
+        PreparedStatement ps = connexion.prepareStatement(sql)) {
+      ps.setString(1, numeroCarre);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new DataAccessException("Impossible de supprimer le site " + numeroCarre, e);
+    }
   }
 
   private static Site depuis(ResultSet rs) throws SQLException {
